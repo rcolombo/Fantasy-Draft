@@ -2,6 +2,7 @@
 import sqlite3
 from mechanize import Browser
 from BeautifulSoup import BeautifulSoup
+import os
 
 def main():
     url = 'http://football.fantasysports.yahoo.com/f1/87516/players'
@@ -9,13 +10,17 @@ def main():
     mech.open(url)
     try:
         mech.select_form(nr=0)
-        mech['login'] = 'ryco218@yahoo.com'
-        mech['passwd'] = 'ryancolombo'
+        mech['login'] = os.environ['YMAIL']
+        mech['passwd'] = os.environ['YPASS']
         r = mech.submit().read()
         soup = BeautifulSoup(r)
     except Exception:
         soup = mech.open(url)
 
+    connection = sqlite3.connect('players.db')
+    cursor = connection.cursor()
+    cursor.execute('DELETE FROM players')
+    connection.commit()
     # Scrape Non-Kickers
     print "Scraping Position Players..."
     scrape_and_insert(mech, soup, False)
