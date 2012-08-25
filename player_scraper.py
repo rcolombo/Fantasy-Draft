@@ -20,6 +20,9 @@ def main():
     connection = sqlite3.connect('players.db')
     cursor = connection.cursor()
     cursor.execute('DELETE FROM players')
+    cursor.execute('DELETE FROM skill_pos_stats')
+    cursor.execute('DELETE FROM kicker_stats')
+    cursor.execute('DELETE FROM defense_stats')
     connection.commit()
     # Scrape Non-Kickers
     print "Scraping Position Players..."
@@ -52,6 +55,42 @@ def scrape_and_insert(mech, soup, defense_bool):
             rank = row.find("td", {"class": "stat wide sorted"}).text
             connection = sqlite3.connect('players.db')
             cursor = connection.cursor()
+            if pos in ("QB", "WR", "TE", "RB"):
+                stats = row.findAll("td", {"class": "stat"})
+                pass_yards = stats[0].text
+                pass_td = stats[1].text
+                pass_int = stats[2].text
+                rush_yards = stats[3].text
+                rush_td = stats[4].text
+                receptions = stats[5].text
+                rec_yards = stats[6].text
+                rec_td = stats[7].text
+                fumbles = stats[10].text
+                cursor.execute('INSERT INTO skill_pos_stats (rank, name, pass_yards, pass_td, pass_int, rush_yards, rush_td, receptions, rec_yards, rec_td, fumbles) \
+                                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                                    (rank, name, pass_yards, pass_td, pass_int, rush_yards, rush_td, receptions, rec_yards, rec_td, fumbles))
+            if pos == "K":
+                stats = row.findAll("td", {"class": "stat"})
+                t1 = stats[0].text
+                t2 = stats[1].text
+                t3 = stats[2].text
+                t4 = stats[3].text
+                t5 = stats[4].text
+                pat = stats[5].text
+                cursor.execute('INSERT INTO kicker_stats (rank, name, t1, t2, t3, t4, t5, pat) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                                    (rank, name, t1, t2, t3, t4, t5, pat))
+
+            if pos == "DEF":
+                stats = row.findAll("td", {"class": "stat"})
+                points = stats[0].text
+                sacks = stats[1].text[:-2]
+                safeties = stats[2].text
+                interceptions = stats[3].text
+                fumble_recoveries = stats[4].text
+                td = stats[5].text
+                cursor.execute('INSERT INTO defense_stats (rank, name, points, sacks, safeties, interceptions, fumble_recoveries, td) \
+                                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                                    (rank, name, points, sacks, safeties, interceptions, fumble_recoveries, td))
             cursor.execute('INSERT INTO players (rank, name, team, position) VALUES(?, ?, ?, ?)',
                                 (rank, name, team, pos))
             connection.commit()
